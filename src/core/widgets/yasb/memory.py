@@ -159,16 +159,16 @@ class MemoryWidget(BaseWidget):
         _round = lambda value: round(value) if self.config.hide_decimal else value
         _naturalsize = lambda value: naturalsize(value, True, True, "%.0f" if self.config.hide_decimal else "%.1f")
         label_options = {
-            "{virtual_mem_free}": _naturalsize(virtual_mem.free),
-            "{virtual_mem_percent}": _round(virtual_mem.percent),
-            "{virtual_mem_total}": _naturalsize(virtual_mem.total),
-            "{virtual_mem_avail}": _naturalsize(virtual_mem.available),
-            "{virtual_mem_used}": _naturalsize(virtual_mem.used),
-            "{virtual_mem_outof}": f"{_naturalsize(virtual_mem.used)} / {_naturalsize(virtual_mem.total)}",
-            "{swap_mem_free}": _naturalsize(swap_mem.free),
-            "{swap_mem_percent}": _round(swap_mem.percent),
-            "{swap_mem_total}": _naturalsize(swap_mem.total),
-            "{histogram}": "".join([self._get_histogram_bar(virtual_mem.percent, 0, 100)]),
+            "virtual_mem_free": _naturalsize(virtual_mem.free),
+            "virtual_mem_percent": _round(virtual_mem.percent),
+            "virtual_mem_total": _naturalsize(virtual_mem.total),
+            "virtual_mem_avail": _naturalsize(virtual_mem.available),
+            "virtual_mem_used": _naturalsize(virtual_mem.used),
+            "virtual_mem_outof": f"{_naturalsize(virtual_mem.used)} / {_naturalsize(virtual_mem.total)}",
+            "swap_mem_free": _naturalsize(swap_mem.free),
+            "swap_mem_percent": _round(swap_mem.percent),
+            "swap_mem_total": _naturalsize(swap_mem.total),
+            "histogram": self._get_histogram_bar(virtual_mem.percent, 0, 100),
         }
 
         if self.config.progress_bar.enabled and self.progress_widget:
@@ -181,8 +181,10 @@ class MemoryWidget(BaseWidget):
 
         for part in label_parts:
             part = part.strip()
-            for fmt_str, value in label_options.items():
-                part = part.replace(fmt_str, str(value))
+            try:
+                part = part.format_map(label_options)
+            except KeyError, ValueError:
+                pass
 
             if part and widget_index < len(active_widgets) and isinstance(active_widgets[widget_index], QLabel):
                 if "<span" in part and "</span>" in part:
