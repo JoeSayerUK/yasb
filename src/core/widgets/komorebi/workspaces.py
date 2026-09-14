@@ -116,6 +116,21 @@ class WorkspaceButtonWithIcons(QFrame):
         self.text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.button_layout.addWidget(self.text_label)
 
+        # Icons live in their own box layout, reserved to a constant width
+        # (max_icons * icon size) so it never resizes as icons come and go,
+        # and left-aligned so leftover space sits as trailing whitespace
+        self.icon_container = QFrame(self)
+        self.icon_container.setProperty("class", "icons")
+        self.icon_container.setSizePolicy(QSizePolicy.Policy.Fixed, self.sizePolicy().verticalPolicy())
+        if self.config.app_icons.max_icons > 0:
+            reserved_width = self.config.app_icons.max_icons * self.config.app_icons.size
+            self.icon_container.setFixedWidth(reserved_width)
+        self.icon_layout = QHBoxLayout(self.icon_container)
+        self.icon_layout.setContentsMargins(0, 0, 0, 0)
+        self.icon_layout.setSpacing(4)
+        self.icon_layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.button_layout.addWidget(self.icon_container)
+
         self.icons = {}
         self.icon_labels = []
         self.hide()
@@ -137,7 +152,9 @@ class WorkspaceButtonWithIcons(QFrame):
 
     def update_and_redraw(self, status: WorkspaceStatus):
         self.status = status
-        self.setProperty("class", f"ws-btn {status.lower()}")
+        state_class = status.lower()
+        self.setProperty("class", f"ws-btn {state_class}")
+        self.icon_container.setProperty("class", f"icons {state_class}")
         if status == WORKSPACE_STATUS_ACTIVE:
             self.text_label.setText(self.active_label)
         elif status == WORKSPACE_STATUS_POPULATED:
@@ -145,6 +162,7 @@ class WorkspaceButtonWithIcons(QFrame):
         else:
             self.text_label.setText(self.default_label)
         refresh_widget_style(self)
+        refresh_widget_style(self.icon_container)
 
     def update_icons(self, icons: dict[int, QPixmap] = None):
         if icons:
@@ -167,21 +185,21 @@ class WorkspaceButtonWithIcons(QFrame):
             if self.config.app_icons.max_icons > 0:
                 icons_list = icons_list[: self.config.app_icons.max_icons]
 
-        # Remove extra QLabel widgets if there are more than needed
         for extra_label in self.icon_labels[len(icons_list) :]:
-            self.button_layout.removeWidget(extra_label)
+            self.icon_layout.removeWidget(extra_label)
             extra_label.setParent(None)
         self.icon_labels = self.icon_labels[: len(icons_list)]
 
-        # Add or update icons
         for index, icon in enumerate(icons_list):
             if index < len(self.icon_labels):
                 self.icon_labels[index].setPixmap(icon)
             else:
                 icon_label = QLabel()
                 icon_label.setProperty("class", f"icon icon-{index + 1}")
+                icon_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+                icon_label.setFixedSize(self.config.app_icons.size, self.config.app_icons.size)
                 icon_label.setPixmap(icon)
-                self.button_layout.addWidget(icon_label)
+                self.icon_layout.addWidget(icon_label)
                 self.icon_labels.append(icon_label)
 
         if self.config.app_icons.hide_label and len(self.icon_labels) > 0:
