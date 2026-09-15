@@ -162,6 +162,7 @@ class WorkspaceButtonWithIcons(QFrame):
         else:
             self.text_label.setText(self.default_label)
         refresh_widget_style(self)
+        refresh_widget_style(self.text_label)
         refresh_widget_style(self.icon_container)
 
     def update_icons(self, icons: dict[int, QPixmap] = None):
